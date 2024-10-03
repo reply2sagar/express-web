@@ -3,52 +3,24 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WebSocket Client</title>
-  <script>
-    document.addEventListener('DOMContentLoaded', (event) => {
-      const ws = new WebSocket('ws://localhost:8080');
-
-      ws.onopen = () => {
-        console.log('Connected to the WebSocket server');
-        ws.send(JSON.stringify({ event: 'greeting', message: 'Hello Server!' }));
-      };
-
-      ws.onmessage = (event) => {
-        try {
-        console.log("Event -> " , event)
-        const data = JSON.parse(event.data);
-        console.log('Message from server:', data);
-        const messageDisplay = document.getElementById('messages');
-        const messageElement = document.createElement('div');
-        messageElement.textContent = `${data.event}: ${data.message}`;
-        messageDisplay.appendChild(messageElement);
-        } catch (error) {
-          console.log("Error " + error)
-        }
-      
-      };
-
-      ws.onclose = () => {
-        console.log('Disconnected from the WebSocket server');
-      };
-
-      ws.onerror = (error) => {
-        console.error('WebSocket error:', error);
-      };
-
-      document.getElementById('sendButton').addEventListener('click', () => {
-        const messageInput = document.getElementById('messageInput').value;
-        ws.send(JSON.stringify({ event: 'greeting', message: messageInput }));
-      });
-    });
-  </script>
+  <title>Custom CAPTCHA</title>
 </head>
 <body>
-  <h1>WebSocket Client</h1>
-  <div>
-    <input type="text" id="messageInput" placeholder="Type a message">
-    <button id="sendButton">Send</button>
-  </div>
-  <div id="messages"></div>
+  <h1>Custom CAPTCHA Example</h1>
+  <form id="captcha-form" action="/verify-captcha" method="POST">
+    <div id="captcha-container"></div>
+    <input type="text" name="captcha" placeholder="Enter CAPTCHA" required>
+    <button type="submit">Submit</button>
+  </form>
+
+  <script>
+    async function loadCaptcha() {
+      const response = await fetch('/captcha');
+      const captchaSvg = await response.text();
+      document.getElementById('captcha-container').innerHTML = captchaSvg;
+    }
+
+    document.addEventListener('DOMContentLoaded', loadCaptcha);
+  </script>
 </body>
 </html>

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PNG CAPTCHA Decoder</title>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@2.1.1/dist/tesseract.min.js"></script>
+</head>
+<body>
+    <h1>PNG CAPTCHA Decoder</h1>
+    <input type="text" id="imageUrl" placeholder="Enter image URL">
+    <button onclick="decodeCaptcha()">Decode CAPTCHA</button>
+    <p id="result"></p>
+
+    <script>
+        function decodeCaptcha() {
+            const imageUrl = "http://localhost:3000/cap.png"
+            
+            if (!imageUrl) {
+                alert('Please enter a valid image URL.');
+                return;
+            }
+
+            const img = new Image();
+            img.crossOrigin = 'Anonymous';
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                ctx.drawImage(img, 0, 0);
+
+                // Convert to grayscale
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const data = imageData.data;
+                for (let i = 0; i < data.length; i += 4) {
+                    const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+                    data[i] = data[i + 1] = data[i + 2] = gray;
+                }
+                ctx.putImageData(imageData, 0, 0);
+
+                // Binarize the image
+                for (let i = 0; i < data.length; i += 4) {
+                    const gray = data[i];
+                    const binary = gray > 128 ? 255 : 0;
+                    data[i] = data[i + 1] = data[i + 2] = binary;
+                }
+                ctx.putImageData(imageData, 0, 0);
+
+                Tesseract.recognize(canvas, 'eng', {
+                    logger: m => console.log(m)
+                }).then(({ data: { text } }) => {
+                    document.getElementById('result').innerText = 'Decoded text: ' + text;
+                }).catch(error => {
+                    console.error('Error decoding CAPTCHA:', error);
+                });
+            };
+            img.onerror = () => {
+                alert('Failed to load image from URL.');
+            };
+            img.src = imageUrl;
+        }
+    </script>
+</body>
+</html>

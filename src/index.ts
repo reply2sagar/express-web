@@ -1,43 +1,47 @@
 // server.js
-
-import express from 'express';
-import http from 'http';
-import { WebSocketServer } from 'ws';
+import express from "express";
+import bodyParser from "body-parser";
+import session from "express-session";
+import svgCaptcha from "svg-captcha";
 
 const app = express();
-const port = 8080;
+const PORT = 3000;
+
+// Middleware to parse JSON and URL-encoded data
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
 // Serve static files from the 'public' directory
-app.use(express.static('public'));
+app.use(express.static("public"));
 
-// Create an HTTP server using Express
-const server = http.createServer(app);
+// Middleware for session handling
+app.use(
+  session({
+    secret: "your-secret-key",
+    resave: false,
+    saveUninitialized: true,
+    cookie: { secure: false }, // Set secure to true in production
+  })
+);
 
-// Create a WebSocket server and attach it to the HTTP server
-const wss = new WebSocketServer({ server });
+// // Route to generate CAPTCHA
+// app.get('/captcha', (req, res) => {
+//   const captcha = svgCaptcha.create({size:6, noise:4});
+//   req.session.captcha = captcha.text; // Store CAPTCHA text in session
+//   res.type('svg');
+//   res.status(200).send(captcha.data); // Send CAPTCHA image as SVG
+// });
 
-// WebSocket connection handler
-wss.on('connection', (ws) => {
-  console.log('New client connected');
+// // Route to verify CAPTCHA
+// app.post('/verify-captcha', (req, res) => {
+//   const { captcha } = req.body;
+//   if (captcha === req.session.captcha) {
+//     res.send('CAPTCHA verification successful!');
+//   } else {
+//     res.send('CAPTCHA verification failed!');
+//   }
+// });
 
-  // Message handler for this connection
-  ws.on('message', (message) => {
-    console.log('received: %s', message);
-
-    // Echo the message back to the client
-    ws.send(`${message}`);
-  });
-
-  // Connection close handler
-  ws.on('close', () => {
-    console.log('Client disconnected');
-  });
-
-  // Send a message to the client upon connection
-  ws.send(JSON.stringify({"event":"Connected" ,"message": "Welcome to the WebSocket server"}));
-});
-
-// Start the server
-server.listen(port, () => {
-  console.log(`Server is listening on http://localhost:${port}`);
+app.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
 });
